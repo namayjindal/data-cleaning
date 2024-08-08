@@ -3,11 +3,46 @@ import pandas as pd
 import numpy as np
 import glob
 
-def reorder_columns(df):
+exercises_to_columns = {
+    "Step Down from Height (dominant)": [3, 4],
+    "Step Down from Height (non-dominant)": [3, 4],
+    "Step over an obstacle (dominant)": [3, 4],
+    "Step over an obstacle (non-dominant)": [3, 4],
+    "Jump symmetrically": [3, 4],
+    "Hit Balloon Up": [1, 2],
+    "Stand on one leg (dominant)": [3, 4],
+    "Stand on one leg (non-dominant)": [3, 4],
+    "Hop forward on one leg (dominant)": [3, 4],
+    "Hop forward on one leg (non-dominant)": [3, 4],
+    "Jumping Jack without Clap": [3, 4],
+    "Dribbling in Fig - 8": [1, 2, 3, 4, 5],
+    "Dribbling in Fig - O": [1, 2, 3, 4, 5],
+    "Jumping Jack with Clap": [1, 2, 3, 4],
+    "Criss Cross with Clap": [1, 2, 3, 4],
+    "Criss Cross without Clap": [3, 4],
+    "Criss Cross with leg forward": [3, 4],
+    "Skipping": [1, 2, 3, 4],
+    "Large Ball Bounce and Catch": [1, 2, 5],
+    "Forward Backward Spread Legs and Back": [3, 4],
+    "Alternate feet forward backward": [3, 4],
+    "Jump asymmetrically": [3, 4],
+    "Hop 9 metres (dominant)": [3, 4],
+    "Hop 9 metres (non-dominant)": [3, 4],
+}
+
+def reorder_columns(df, file_name):
     prefixes = ['right_hand', 'left_hand', 'right_leg', 'left_leg', 'ball']
     reordered_columns = []
-    for prefix in prefixes:
-        reordered_columns.extend([col for col in df.columns if col.startswith(prefix)])
+    exercise_name = os.path.splitext(os.path.basename(file_name))[0].split('-')[0]
+    
+    if exercise_name in exercises_to_columns:
+        column_indices = exercises_to_columns[exercise_name]
+        for prefix, index in zip(prefixes, column_indices):
+            reordered_columns.extend([col for col in df.columns if col.startswith(prefixes[index-1])])
+    else:
+        for prefix in prefixes:
+            reordered_columns.extend([col for col in df.columns if col.startswith(prefix)])
+    
     return df[reordered_columns]
 
 def is_row_valid(row):
@@ -34,8 +69,8 @@ def process_file(file_path, output_dir):
     print(f"Processing file: {file_path}")
     df = pd.read_csv(file_path)
     
-    # Reorder columns
-    df = reorder_columns(df)
+    # Reorder and filter columns
+    df = reorder_columns(df, file_path)
     
     # Remove rows with abnormal values
     df = remove_abnormal_rows(df)
