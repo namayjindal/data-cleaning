@@ -34,14 +34,20 @@ def reorder_columns(df, file_name):
     prefixes = ['right_hand', 'left_hand', 'right_leg', 'left_leg', 'ball']
     reordered_columns = []
     exercise_name = os.path.splitext(os.path.basename(file_name))[0].split('-')[0]
+    exercise_name.strip()
     
     if exercise_name in exercises_to_columns:
         column_indices = exercises_to_columns[exercise_name]
-        for prefix, index in zip(prefixes, column_indices):
+        print('COLUMN INDICES', column_indices, '\n')
+        for index in column_indices:
             reordered_columns.extend([col for col in df.columns if col.startswith(prefixes[index-1])])
     else:
+        # If exercise is not in the mapping, keep all columns
         for prefix in prefixes:
             reordered_columns.extend([col for col in df.columns if col.startswith(prefix)])
+    
+    # Remove duplicates while preserving order
+    reordered_columns = list(dict.fromkeys(reordered_columns))
     
     return df[reordered_columns]
 

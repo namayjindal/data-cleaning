@@ -1,2 +1,7 @@
 /cleaned_data
 /data
+/plots
+/peak_detection/extracted_segments
+/peak_detection/extracted_segments_csv
+/peak_detection/features_output
+/peak_detection/hopping
