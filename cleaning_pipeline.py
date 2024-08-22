@@ -65,9 +65,25 @@ def find_valid_start_index(df, timestamp_cols):
         return None
     return max(start_indices)
 
-def process_file(file_path, output_dir):
+def extract_date_from_filename(file_name):
+    timestamp_part = file_name.split('-')[-1]  # Extracts the last part of the file name
+    date_str = timestamp_part[:8]  # Extract the date part (YYYYMMDD)
+    return date_str
+
+def process_file(file_path, output_base_dir):
     print(f"Processing file: {file_path}")
+    
+    # Check if file is empty or contains only headers
+    if os.stat(file_path).st_size == 0:
+        print(f"Skipping empty file: {file_path}")
+        return
+    
     df = pd.read_csv(file_path)
+    
+    # Skip files with only headers
+    if df.empty or len(df.columns) == 0:
+        print(f"Skipping file with only headers: {file_path}")
+        return
     
     # Reorder and filter columns
     df = reorder_columns(df, file_path)
@@ -103,6 +119,13 @@ def process_file(file_path, output_dir):
         if large_gaps > 20:
             print(f"Alert: {large_gaps} instances of timestamp differences exceeding 100ms in column {col}")
     
+    # Extract date from the file name and create a corresponding directory
+    date_str = extract_date_from_filename(os.path.basename(file_path))
+    output_dir = os.path.join(output_base_dir, date_str)
+    
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+    
     # Save the cleaned data
     output_path = os.path.join(output_dir, os.path.basename(file_path))
     df.to_csv(output_path, index=False)
@@ -110,13 +133,13 @@ def process_file(file_path, output_dir):
 
 def main():
     input_dir = 'data'
-    output_dir = 'cleaned_data'
+    output_base_dir = 'cleaned_data'
     
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
+    if not os.path.exists(output_base_dir):
+        os.makedirs(output_base_dir)
     
     for file_path in glob.glob(os.path.join(input_dir, '*.csv')):
-        process_file(file_path, output_dir)
+        process_file(file_path, output_base_dir)
 
 if __name__ == "__main__":
     main()
