@@ -5,7 +5,7 @@ from scipy.stats import skew, kurtosis
 
 def calculate_features(segment, window_size):
     features = []
-    for start in range(0, len(segment) - window_size + 1, 2):
+    for start in range(0, len(segment) - window_size + 1, 4):
         end = start + window_size
         window = segment[start:end]
         
@@ -41,7 +41,7 @@ def process_csv_file(filename, window_size):
     all_features_df = pd.concat(all_features, axis=1)
     return all_features_df
 
-def extract_features_from_segments(directory, window_size=4, output_dir='features_output'):
+def extract_features_from_segments(directory, window_size=4, output_dir='peak_detection/features_output'):
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
     
@@ -56,7 +56,7 @@ def extract_features_from_segments(directory, window_size=4, output_dir='feature
             print(f"Extracted features saved to {output_filename}")
 
 # Directory containing the extracted segments
-segments_directory = 'extracted_segments_csv'
+segments_directory = 'peak_detection/extracted_segments_csv'
 
 # Extract features from all files in the directory
 extract_features_from_segments(segments_directory)

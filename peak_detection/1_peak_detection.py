@@ -38,10 +38,16 @@ def plot_and_save_segments(data, peaks, output_dir, csv_output_dir, filename):
     # Select relevant columns (skip timestamp, index, and battery percentage)
     columns_to_extract = [
         'right_leg_accel_x', 'right_leg_accel_y', 'right_leg_accel_z',
-        'right_leg_gyro_x', 'right_leg_gyro_y', 'right_leg_gyro_z',
         'left_leg_accel_x', 'left_leg_accel_y', 'left_leg_accel_z',
-        'left_leg_gyro_x', 'left_leg_gyro_y', 'left_leg_gyro_z'
     ]
+
+    # columns_to_extract = [
+    #     'right_leg_accel_x', 'right_leg_accel_y', 'right_leg_accel_z',
+    #     'right_leg_gyro_x', 'right_leg_gyro_y', 'right_leg_gyro_z',
+    #     'left_leg_accel_x', 'left_leg_accel_y', 'left_leg_accel_z',
+    #     'left_leg_gyro_x', 'left_leg_gyro_y', 'left_leg_gyro_z'
+    # ]
+
     data = data[columns_to_extract]
 
     for i in range(len(peaks) - 1):
@@ -88,9 +94,9 @@ def process_all_files(input_dir, output_dir, csv_output_dir):
             plt.close()
 
 # Directories
-input_directory = "hopping"
-output_directory = "extracted_segments"
-csv_output_directory = "extracted_segments_csv"
+input_directory = "peak_detection/hopping"
+output_directory = "peak_detection/extracted_segments"
+csv_output_directory = "peak_detection/extracted_segments_csv"
 
 # Process all files in the directory
 process_all_files(input_directory, output_directory, csv_output_directory)

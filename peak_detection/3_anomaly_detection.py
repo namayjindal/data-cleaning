@@ -65,7 +65,8 @@ class TFAnomalyDetector(tf.Module):
         self.scaler_mean = tf.Variable(scaler.mean_, dtype=tf.float32)
         self.scaler_scale = tf.Variable(scaler.scale_, dtype=tf.float32)
     
-    @tf.function(input_signature=[tf.TensorSpec(shape=[1, 84], dtype=tf.float32)])
+    # @tf.function(input_signature=[tf.TensorSpec(shape=[1, 84], dtype=tf.float32)])
+    @tf.function(input_signature=[tf.TensorSpec(shape=[1, 42], dtype=tf.float32)])
     def __call__(self, x):
         x_scaled = (x - self.scaler_mean) / self.scaler_scale
         distances = tf.reduce_sum(tf.square(tf.expand_dims(x_scaled, axis=1) - self.centroids), axis=2)
@@ -76,7 +77,7 @@ tf_detector = TFAnomalyDetector(detector.kmeans, detector.scaler)
 converter = tf.lite.TFLiteConverter.from_keras_model(tf_detector)
 tflite_model = converter.convert()
 
-with open('hopping_anomaly_detector.tflite', 'wb') as f:
+with open('peak_detection/hopping_anomaly_detector.tflite', 'wb') as f:
     f.write(tflite_model)
 
 interpreter = tf.lite.Interpreter(model_content=tflite_model)
@@ -87,13 +88,14 @@ def get_tflite_predictions(interpreter, X):
     output_details = interpreter.get_output_details()
     results = []
     for sample in X:
-        interpreter.set_tensor(input_details[0]['index'], sample.reshape(1, 84).astype(np.float32))
+        # interpreter.set_tensor(input_details[0]['index'], sample.reshape(1, 84).astype(np.float32))
+        interpreter.set_tensor(input_details[0]['index'], sample.reshape(1, 42).astype(np.float32))
         interpreter.invoke()
         results.append(interpreter.get_tensor(output_details[0]['index'])[0])
     return np.array(results)
 
 tflite_train_results = get_tflite_predictions(interpreter, X_train)
-threshold = np.percentile(tflite_train_results, 95)
+threshold = np.percentile(tflite_train_results, 70)
 print(f"\nAnomaly threshold (based on TFLite model): {threshold}")
 
 test_dir = "peak_detection/test_data"
@@ -102,23 +104,50 @@ print(f"Number of test files: {test_file_count}")
 
 tflite_test_results = get_tflite_predictions(interpreter, X_test)
 
+def should_be_anomaly(filename):
+    return "Stand on one leg" in filename or "Criss Cross" in filename
+
 print("\nTFLite Model Anomaly Detection:")
+correct_predictions = 0
+total_predictions = 0
+
 for (filename, row_num), result, anomaly_score in zip(test_file_info, tflite_test_results > threshold, tflite_test_results):
-    print(f"File: {filename}, Row: {row_num}, Is Anomaly: {result}, Anomaly Score: {anomaly_score}")
+    expected_anomaly = should_be_anomaly(filename)
+    is_correct = (result == expected_anomaly)
+    correct_predictions += int(is_correct)
+    total_predictions += 1
+    print(f"File: {filename}, Row: {row_num}, Is Anomaly: {result}, Anomaly Score: {anomaly_score}, Correct: {is_correct}")
 
 # Summary
 anomaly_counts = {}
+file_accuracies = {}
+
 for (filename, _), result in zip(test_file_info, tflite_test_results > threshold):
     if filename not in anomaly_counts:
-        anomaly_counts[filename] = {"total": 0, "anomalies": 0}
+        anomaly_counts[filename] = {"total": 0, "anomalies": 0, "correct": 0}
     anomaly_counts[filename]["total"] += 1
     if result:
         anomaly_counts[filename]["anomalies"] += 1
+    if result == should_be_anomaly(filename):
+        anomaly_counts[filename]["correct"] += 1
 
 print("\nSummary:")
+overall_correct = 0
+overall_total = 0
+
 for filename, counts in anomaly_counts.items():
     print(f"File: {filename}")
     print(f"  Total rows: {counts['total']}")
     print(f"  Anomalies detected: {counts['anomalies']}")
-    print(f"  Percentage of anomalies: {(counts['anomalies'] / counts['total']) * 100:.2f}%")
+    print(f"  Correct predictions: {counts['correct']}")
+    accuracy = (counts['correct'] / counts['total']) * 100
+    print(f"  Accuracy: {accuracy:.2f}%")
     print()
+    
+    overall_correct += counts['correct']
+    overall_total += counts['total']
+
+overall_accuracy = (overall_correct / overall_total) * 100
+print(f"\nOverall Accuracy: {overall_accuracy:.2f}%")
+print(f"Total Correct Predictions: {overall_correct}")
+print(f"Total Predictions: {overall_total}")
