@@ -5,3 +5,6 @@
 /peak_detection/extracted_segments_csv
 /peak_detection/features_output
 /peak_detection/hopping
+/peak_detection/test_data
+*.tflite
+*.csv
